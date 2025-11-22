@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Christmas Case Opening</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Fond Noël */
+    body {
+      background-image: url("https://images.steamusercontent.com/ugc/878629698800050882/C038DBF35BFCED6659CCBA9C496D95E6FFD10129/");
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      overflow-x: hidden;
+    }
+
+    /* Animation du défilement des items */
+    @keyframes rollAnimation {
+      from { transform: translateX(0); }
+      to { transform: translateX(-8500px); }
+    }
+
+    /* Effet de feu autour de l’arme */
+    .fire-effect {
+      position: relative;
+    }
+    .fire-effect::before {
+      content: "";
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle, rgba(255,150,0,0.9), rgba(255,40,0,0.6), transparent 70%);
+      border-radius: 50%;
+      filter: blur(20px);
+      animation: firePulse 0.4s infinite alternate;
+      z-index: -1;
+    }
+
+    @keyframes firePulse {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; }
+      100% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+    }
+
+    /* ---- ANIMATION DE LA CAISSE ---- */
+    @keyframes liftCaseStay {
+      0% {
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        transform: translateY(-150px) scale(1.2);
+      }
+    }
+
+    .case-lift-stay {
+      animation: liftCaseStay 0.7s ease-out forwards;
+      z-index: 999 !important;
+      position: relative;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+<!-- CANVAS DE NEIGE -->
+<canvas id="snow" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></canvas>
+
+<!-- En-tête -->
+<div class="text-center mb-8 relative z-10">
+  <div class="flex flex-col items-center justify-center mb-4">
+  <img 
+    src="https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/ChatGPT.Image.22.nov.2025.11_47_44.png" 
+    alt="Logo" 
+    class="w-48 h-auto drop-shadow-lg"
+  />
+</div>
+
+<p class="text-gray-300 text-lg">Ouvrez la caisse de Noël et découvrez votre skin !</p>
+</div>
+
+<!-- Caisse fermée -->
+<div id="closedCase" class="mb-8 animate-bounce relative z-20 text-center">
+  <div class="flex items-center justify-center mb-6">
+    <img 
+      src="https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/Adobe.Express.-.file.9.png" 
+      alt="Logo" 
+      class="w-48 h-auto drop-shadow-lg"
+    />
+  </div>
+  <p class="text-white font-bold text-2xl">LA SIMON CASE🔥</p>
+</div>
+
+<!-- Animation -->
+<div id="animationZone" class="mb-8 w-full max-w-4xl relative hidden z-10">
+
+  <div class="absolute left-1/2 top-20 w-1 bg-red-500 z-20 transform -translate-x-1/2 shadow-lg shadow-red-500 h-64"></div>
+
+  <div class="overflow-hidden bg-black/50 rounded-lg p-4 relative">
+    <div id="itemsContainer" class="flex gap-4"></div>
+  </div>
+</div>
+
+<!-- Résultat -->
+<div id="resultZone" class="mb-8 hidden relative z-10">
+  <div id="resultBox" class="w-96 h-96 rounded-lg flex flex-col items-center justify-center p-8 border-4 shadow-2xl transform scale-110 animate-pulse bg-black/40">
+    
+    <div class="fire-effect mb-4">
+      <img id="resultImg" class="w-40 h-40 object-contain" />
+    </div>
+
+    <p class="text-white font-bold text-3xl text-center mb-2" id="resultName"></p>
+    <p class="text-xl font-semibold" id="resultRarity"></p>
+
+    <div class="mt-6 text-yellow-400 text-lg font-bold animate-bounce">
+      ★ FÉLICITATIONS ! ★
+      
+    </div>
+  </div>
+</div>
+
+<!-- Bouton -->
+<button id="openBtn"
+  class="px-12 py-4 text-xl font-bold rounded-lg transition-all transform bg-gradient-to-r from-red-500 to-yellow-500 hover:scale-105 shadow-lg shadow-red-500/50 text-white relative z-10">
+  OUVRIR LA CAISSE
+</button>
+
+<!-- SONS -->
+<audio id="openSound" src="https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/casesounddopening.mp3"></audio>
+<audio id="winSound" src="https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/johnseena.mp3"></audio>
+
+<script>
+/* ==== JS DE LA NEIGE ==== */
+const canvas = document.getElementById("snow");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let snowflakes = [];
+
+function createSnowFlake() {
+  const x = Math.random() * canvas.width;
+  const y = 0;
+  const size = Math.random() * 4 + 1;
+  const speed = Math.random() * 1 + 0.5;
+  snowflakes.push({ x, y, size, speed });
+}
+
+function updateSnow() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  snowflakes.forEach((flake, index) => {
+    flake.y += flake.speed;
+    if (flake.y > canvas.height) snowflakes.splice(index, 1);
+
+    ctx.beginPath();
+    ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+  });
+}
+
+setInterval(createSnowFlake, 80);
+function animate() {
+  updateSnow();
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ==== JS DE LA CAISSE ==== */
+
+const openBtn = document.getElementById("openBtn");
+const closedCase = document.getElementById("closedCase");
+const animationZone = document.getElementById("animationZone");
+const itemsContainer = document.getElementById("itemsContainer");
+const resultZone = document.getElementById("resultZone");
+
+const openSound = document.getElementById("openSound");
+const winSound = document.getElementById("winSound");
+
+const winningItem = {
+  name: "AXIA",
+  rarity: "COVERT",
+  color: "#d32ce6",
+  image:
+    "https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/axia.png",
+};
+
+const fillerItems = [
+  {
+    name: "M4A1S | Iconographie",
+    rarity: "Covert",
+    color: "#eb4b4b",
+    image: "https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/512fx384f.1.png"
+  },
+  {
+    name: "AWP | Traditions des dragons",
+    rarity: "Covert",
+    color: "#eb4b4b",
+    image: "https://github.com/SimWbug/CL4NNONO/releases/download/finalefile/512fx384f.png"
+  }
+];
+
+function generateItems() {
+  let list = [];
+  for (let i = 0; i < 50; i++) {
+    list.push(fillerItems[Math.floor(Math.random() * fillerItems.length)]);
+  }
+  list[45] = winningItem;
+  return list;
+}
+
+openBtn.addEventListener("click", () => {
+
+  openSound.play();
+
+  openBtn.disabled = true;
+  openBtn.textContent = "Ouverture...";
+
+  /* 👉 La caisse reste visible mais monte */
+  closedCase.classList.add("case-lift-stay");
+
+  resultZone.classList.add("hidden");
+  animationZone.classList.remove("hidden");
+
+  itemsContainer.innerHTML = "";
+  const items = generateItems();
+
+  items.forEach(item => {
+    const box = document.createElement("div");
+    box.className = "min-w-[200px] h-48 rounded-lg flex flex-col items-center justify-center p-4 border-2 shadow-lg";
+    box.style.backgroundColor = item.color + "20";
+    box.style.borderColor = item.color;
+
+    box.innerHTML = `
+      <div class="mb-2">
+        <img src="${item.image}" class="w-20 h-20 object-contain">
+      </div>
+      <p class="text-white font-bold text-center text-sm">${item.name}</p>
+      <p class="text-xs mt-1" style="color:${item.color}">${item.rarity}</p>
+    `;
+
+    itemsContainer.appendChild(box);
+  });
+
+  itemsContainer.style.animation = "rollAnimation 5s ease-out forwards";
+
+  setTimeout(() => {
+    animationZone.classList.add("hidden");
+    resultZone.classList.remove("hidden");
+
+    winSound.play();
+
+    document.getElementById("resultImg").src = winningItem.image;
+    document.getElementById("resultName").textContent = winningItem.name;
+
+    const r = document.getElementById("resultRarity");
+    r.textContent = winningItem.rarity;
+    r.style.color = winningItem.color;
+
+    openBtn.classList.add("hidden");
+
+  }, 5000);
+});
+</script>
+
+</body>
+</html>
